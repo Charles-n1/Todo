@@ -2,15 +2,18 @@ import { useState } from 'react';
 import AppText from '../components/AppText';
 import AnswerButton from '../components/AnswerButton';
 import BackButton from '../components/BackButton';
+import MainButton from '../components/MainButton';
 import PercentSlider from '../components/PercentSlider';
 import ScrollView from '../components/ScrollView';
+import TasksModal from '../components/TasksModal';
 import { THEMES } from '../themes';
 import { MUSICS, playMusic, playSound, setMusicVolume, setSoundVolume } from '../sounds';
 
 const THEMES_SHOWN = 4; // themes visible before "see more theme"
 
-export default function SettingsPage({ settings, changeSetting, onBack }) {
+export default function SettingsPage({ settings, changeSetting, tasks, onEditTask, onBack }) {
   const [showAllThemes, setShowAllThemes] = useState(false);
+  const [tasksOpen, setTasksOpen] = useState(false);
   const visibleThemes = showAllThemes ? THEMES : THEMES.slice(0, THEMES_SHOWN);
 
   function toggleThemes() {
@@ -40,6 +43,9 @@ export default function SettingsPage({ settings, changeSetting, onBack }) {
     <div style={styles.page}>
       <ScrollView contentStyle={styles.content}>
         <AppText style={styles.title}>Parameters</AppText>
+
+        <AppText style={styles.section}>Tasks</AppText>
+        <MainButton label="Manage my tasks" onPress={() => setTasksOpen(true)} style={styles.manage} />
 
         <AppText style={styles.section}>Music</AppText>
         <PercentSlider label="Volume" value={settings.musicVolume} onChange={changeMusicVolume} />
@@ -76,6 +82,8 @@ export default function SettingsPage({ settings, changeSetting, onBack }) {
       </ScrollView>
 
       <BackButton onPress={onBack} />
+
+      {tasksOpen && <TasksModal tasks={tasks} onEdit={onEditTask} onClose={() => setTasksOpen(false)} />}
     </div>
   );
 }
@@ -92,6 +100,10 @@ const styles = {
   title: {
     fontSize: 28,
     fontWeight: 'bold',
+  },
+  manage: {
+    marginTop: 0,
+    borderRadius: 6,
   },
   link: {
     textDecoration: 'underline',

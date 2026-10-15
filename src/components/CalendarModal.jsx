@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 import AppText from './AppText';
+import Modal from './Modal';
 import { useTheme } from '../themes';
 import { SHORT_NAMES, WEEK, dateKey, fromKey } from '../logic/dates';
 import { tasksOn, isDone } from '../logic/tasks';
@@ -50,23 +51,12 @@ function monthCells(year, month) {
 }
 
 // The window with the calendar of a month. Each day: its number, then a box colored by the tasks done.
-// A tap on a day shows its tasks (onSelect), a tap outside closes it (onClose).
+// A tap on a day shows its tasks (onSelect).
 export default function CalendarModal({ tasks, done, todayKey, selectedKey, onSelect, onClose }) {
   const theme = useTheme();
   const start = fromKey(selectedKey);
   const [year, setYear] = useState(start.getFullYear());
   const [month, setMonth] = useState(start.getMonth()); // 0 = January
-
-  // On a computer: Escape closes the window.
-  useEffect(listenEscape, [onClose]);
-
-  function listenEscape() {
-    function keyDown(event) {
-      if (event.key === 'Escape') onClose();
-    }
-    window.addEventListener('keydown', keyDown);
-    return () => window.removeEventListener('keydown', keyDown);
-  }
 
   // month -1 / +1. new Date() fixes "month 12" into January of the next year.
   function changeMonth(step) {
@@ -111,64 +101,40 @@ export default function CalendarModal({ tasks, done, todayKey, selectedKey, onSe
   }
 
   return (
-    // The dark veil: a tap on it closes the window. The window itself stops the tap (stopPropagation).
-    <div style={styles.veil} onClick={onClose}>
-      <div style={{ ...styles.window, backgroundColor: theme.card, borderColor: theme.border }} onClick={(event) => event.stopPropagation()}>
-        <div style={styles.header}>
-          <button onClick={() => changeMonth(-1)} aria-label="previous month" className="press" style={styles.arrowButton}>
-            <div style={{ ...styles.arrow, borderColor: theme.text, transform: 'rotate(45deg)', marginLeft: 5 }} />
-          </button>
-          <AppText style={styles.title}>{MONTH_NAMES[month] + ' ' + year}</AppText>
-          <button onClick={() => changeMonth(1)} aria-label="next month" className="press" style={styles.arrowButton}>
-            <div style={{ ...styles.arrow, borderColor: theme.text, transform: 'rotate(-135deg)', marginRight: 5 }} />
-          </button>
-        </div>
-
-        <div style={styles.grid}>
-          {WEEK.map((weekDay) => (
-            <div key={weekDay} style={styles.cell}>
-              <AppText style={styles.weekDay}>{SHORT_NAMES[weekDay]}</AppText>
-            </div>
-          ))}
-          {monthCells(year, month).map(renderDay)}
-        </div>
-
-        {/* The legend: from nothing done to everything done */}
-        <div style={styles.legend}>
-          <AppText style={styles.legendText}>Nothing</AppText>
-          <div style={{ ...styles.legendBox, borderColor: theme.border }} />
-          {[0, 0.25, 0.5, 0.75, 1].map((part) => (
-            <div key={part} style={{ ...styles.legendBox, borderColor: theme.border, backgroundColor: rainbowColor(part) }} />
-          ))}
-          <AppText style={styles.legendText}>All done</AppText>
-        </div>
-
-        <button onClick={onClose} className="press" style={{ ...styles.close, backgroundColor: theme.button }}>
-          <span style={{ ...styles.closeText, color: theme.buttonText }}>Close</span>
+    <Modal onClose={onClose}>
+      <div style={styles.header}>
+        <button onClick={() => changeMonth(-1)} aria-label="previous month" className="press" style={styles.arrowButton}>
+          <div style={{ ...styles.arrow, borderColor: theme.text, transform: 'rotate(45deg)', marginLeft: 5 }} />
+        </button>
+        <AppText style={styles.title}>{MONTH_NAMES[month] + ' ' + year}</AppText>
+        <button onClick={() => changeMonth(1)} aria-label="next month" className="press" style={styles.arrowButton}>
+          <div style={{ ...styles.arrow, borderColor: theme.text, transform: 'rotate(-135deg)', marginRight: 5 }} />
         </button>
       </div>
-    </div>
+
+      <div style={styles.grid}>
+        {WEEK.map((weekDay) => (
+          <div key={weekDay} style={styles.cell}>
+            <AppText style={styles.weekDay}>{SHORT_NAMES[weekDay]}</AppText>
+          </div>
+        ))}
+        {monthCells(year, month).map(renderDay)}
+      </div>
+
+      {/* The legend: from nothing done to everything done */}
+      <div style={styles.legend}>
+        <AppText style={styles.legendText}>Nothing</AppText>
+        <div style={{ ...styles.legendBox, borderColor: theme.border }} />
+        {[0, 0.25, 0.5, 0.75, 1].map((part) => (
+          <div key={part} style={{ ...styles.legendBox, borderColor: theme.border, backgroundColor: rainbowColor(part) }} />
+        ))}
+        <AppText style={styles.legendText}>All done</AppText>
+      </div>
+    </Modal>
   );
 }
 
 const styles = {
-  veil: {
-    position: 'absolute',
-    inset: 0,
-    zIndex: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-  },
-  window: {
-    width: '100%',
-    maxWidth: 420,
-    borderRadius: 6,
-    borderWidth: 2,
-    padding: 16,
-    boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -236,17 +202,5 @@ const styles = {
     fontSize: 12,
     marginLeft: 3,
     marginRight: 3,
-  },
-  close: {
-    alignSelf: 'center',
-    marginTop: 14,
-    paddingTop: 10,
-    paddingBottom: 10,
-    paddingLeft: 28,
-    paddingRight: 28,
-    borderRadius: 6,
-  },
-  closeText: {
-    fontWeight: 'bold',
   },
 };

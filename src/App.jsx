@@ -132,7 +132,9 @@ export default function App() {
   }
 
   function renderPage() {
-    if (page === 'settings') return <SettingsPage settings={settings} changeSetting={changeSetting} onBack={goHome} />;
+    if (page === 'settings') return (
+        <SettingsPage settings={settings} changeSetting={changeSetting} tasks={tasks} onEditTask={openTask} onBack={goHome} />
+      );
     if (page === 'task') return <TaskPage task={editedTask} onSave={saveTask} onDelete={deleteTask} onBack={goHome} />;
     return (
       <HomePage
