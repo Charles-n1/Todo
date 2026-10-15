@@ -1,9 +1,13 @@
+import { useState } from 'react';
+
 import AppText from '../components/AppText';
 import Icon from '../components/Icon';
 import ScrollView from '../components/ScrollView';
 import WeekChart from '../components/WeekChart';
 import TaskRow from '../components/TaskRow';
 import AddButton from '../components/AddButton';
+import CalendarButton from '../components/CalendarButton';
+import CalendarModal from '../components/CalendarModal';
 import { useTheme, DONE_GREEN } from '../themes';
 import { FULL_NAMES, addDays, dateKey, fromKey } from '../logic/dates';
 import { tasksOn, isDone } from '../logic/tasks';
@@ -23,6 +27,7 @@ function dayTitle(dayKey, todayKey) {
 // selectedKey: the day shown in the list ("2026-10-15"). onToggle(dayKey, taskId): check / uncheck.
 export default function HomePage({ tasks, done, todayKey, selectedKey, onSelectDay, onToggle, onAdd, onEdit, onOpenSettings }) {
   const theme = useTheme();
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const weekDay = fromKey(selectedKey).getDay();
   const dayTasks = tasksOn(tasks, weekDay);
   const doneCount = dayTasks.filter((task) => isDone(done, selectedKey, task.id)).length;
@@ -33,6 +38,12 @@ export default function HomePage({ tasks, done, todayKey, selectedKey, onSelectD
     const checking = !isDone(done, selectedKey, task.id);
     onToggle(selectedKey, task.id);
     if (checking) celebrate(box, doneCount + 1 === dayTasks.length);
+  }
+
+  // A day tapped in the calendar: show its tasks, close the calendar.
+  function selectFromCalendar(dayKey) {
+    onSelectDay(dayKey);
+    setCalendarOpen(false);
   }
 
   return (
@@ -77,7 +88,19 @@ export default function HomePage({ tasks, done, todayKey, selectedKey, onSelectD
         )}
       </ScrollView>
 
+      <CalendarButton onPress={() => setCalendarOpen(true)} />
       <AddButton onPress={onAdd} />
+
+      {calendarOpen && (
+        <CalendarModal
+          tasks={tasks}
+          done={done}
+          todayKey={todayKey}
+          selectedKey={selectedKey}
+          onSelect={selectFromCalendar}
+          onClose={() => setCalendarOpen(false)}
+        />
+      )}
     </div>
   );
 }
