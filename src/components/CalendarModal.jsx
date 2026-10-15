@@ -164,7 +164,7 @@ const styles = {
   window: {
     width: '100%',
     maxWidth: 420,
-    borderRadius: 20,
+    borderRadius: 6,
     borderWidth: 2,
     padding: 16,
     boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
@@ -214,9 +214,10 @@ const styles = {
     marginBottom: 3,
   },
   box: {
-    width: '100%',
+    width: '70%',
+    maxWidth: 34,
     aspectRatio: '1', // a square, whatever the width of the screen
-    borderRadius: 8,
+    borderRadius: 3,
   },
   legend: {
     flexDirection: 'row',
@@ -228,7 +229,7 @@ const styles = {
   legendBox: {
     width: 16,
     height: 16,
-    borderRadius: 4,
+    borderRadius: 2,
     borderWidth: 1,
   },
   legendText: {
@@ -243,7 +244,7 @@ const styles = {
     paddingBottom: 10,
     paddingLeft: 28,
     paddingRight: 28,
-    borderRadius: 20,
+    borderRadius: 6,
   },
   closeText: {
     fontWeight: 'bold',
