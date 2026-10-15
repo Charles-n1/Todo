@@ -1,0 +1,256 @@
+/* ---------- Make the web behave like React Native ---------- */
+/* In React Native, every <View> is a flex column, borders are solid, and nothing shrinks by default.
+   With these rules, a <div> behaves exactly like a <View>: the styles from Prep my TOEIC work the same. */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border-width: 0;
+  border-style: solid;
+}
+
+div,
+button,
+label {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: relative;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+input,
+textarea {
+  font: inherit;
+  font-size: 16px; /* under 16px, the iPhone zooms when you type */
+  outline: none;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #888;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden; /* only the pages scroll, not the whole site */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-user-select: none; /* like an app: no text selection by long press */
+  user-select: none;
+}
+
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* ---------- A button that sinks a little under the finger ---------- */
+.press {
+  transition: transform 0.12s;
+}
+
+.press:active {
+  transform: scale(0.9);
+}
+
+/* ---------- The swipe when changing page ---------- */
+.page {
+  position: absolute;
+  inset: 0;
+}
+
+.from-right {
+  animation: from-right 0.3s ease-out;
+}
+
+.from-left {
+  animation: from-left 0.3s ease-out;
+}
+
+@keyframes from-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes from-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+/* ---------- The box of a task: the satisfying check ---------- */
+/* Under the finger: it sinks. */
+.todo-box {
+  transition: transform 0.12s, background-color 0.25s, border-color 0.25s;
+}
+
+button:active > .todo-box {
+  transform: scale(0.85);
+}
+
+/* Just checked: squash... then jump bigger than it is... then back to normal (like a jelly). */
+.todo-box.pop {
+  animation: box-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes box-pop {
+  0% {
+    transform: scale(0.85);
+  }
+  25% {
+    transform: scale(0.7);
+  }
+  60% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* A green ring that flies out of the box and disappears. */
+.todo-box.pop::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border: 3px solid #2e9e4f;
+  border-radius: 12px;
+  opacity: 0;
+  animation: ring 0.6s ease-out;
+}
+
+@keyframes ring {
+  from {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  to {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+/* The green V. It is a line 22px long: with a "dash" of 22px and a shift of 22px, nothing is drawn;
+   the shift goes back to 0 -> the line draws itself, like a pen. */
+.check-mark {
+  fill: none;
+  stroke: #2e9e4f;
+  stroke-width: 3.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 22;
+  stroke-dashoffset: 0;
+}
+
+.pop .check-mark {
+  animation: draw-check 0.35s ease-out 0.12s backwards; /* backwards: invisible during the 0.12 s wait */
+}
+
+@keyframes draw-check {
+  from {
+    stroke-dashoffset: 22;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* The line across the name of a done task. */
+.strike {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 1px;
+  transform-origin: left;
+}
+
+.strike.draw {
+  animation: strike 0.3s ease-out 0.15s backwards; /* it crosses the name, from left to right */
+}
+
+@keyframes strike {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* ---------- The blocks of the chart ---------- */
+/* A new block grows from the line, with a little bounce. */
+.block {
+  transform-origin: bottom;
+  animation: block-grow 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
+@keyframes block-grow {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+/* A block that turns green: it pops, with a flash of light. */
+.block-done {
+  animation: block-done 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
+@keyframes block-done {
+  0% {
+    transform: scale(0.3);
+    filter: brightness(2);
+  }
+  50% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+    filter: none;
+  }
+}
+
+/* ---------- The confetti sheet (see logic/confetti.js) ---------- */
+.confetti {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* the taps go through it, to the app */
+  z-index: 100;
+}
+
+/* The phone asks for less motion (accessibility): no bounces. (The confetti are fewer, see confetti.js.) */
+@media (prefers-reduced-motion: reduce) {
+  .page,
+  .block,
+  .block-done,
+  .todo-box.pop {
+    animation: none;
+  }
+}
