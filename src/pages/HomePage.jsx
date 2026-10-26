@@ -69,9 +69,6 @@ export default function HomePage({ tasks, done, todayKey, selectedKey, onSelectD
       </div>
 
       <ScrollView contentStyle={styles.list}>
-        {future && dayTasks.length > 0 && (
-          <AppText style={styles.hint}>You can check these on {FULL_NAMES[weekDay]}.</AppText>
-        )}
         {dayTasks.map((task) => (
           <TaskRow
             // Another day = new rows: the animation of one day never plays again on another day.
