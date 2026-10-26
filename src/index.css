@@ -235,6 +235,15 @@ button:active > .todo-box {
   }
 }
 
+/* The weeks scroll sideways, without a scrollbar (like on a phone). */
+.week-scroll {
+  scrollbar-width: none;
+}
+
+.week-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 /* ---------- The confetti sheet (see logic/confetti.js) ---------- */
 .confetti {
   position: fixed;

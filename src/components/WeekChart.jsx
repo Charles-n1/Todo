@@ -1,6 +1,8 @@
+import { useLayoutEffect, useRef } from 'react';
+
 import AppText from './AppText';
 import { useTheme, DONE_GREEN } from '../themes';
-import { SHORT_NAMES, FULL_NAMES, dateKey, fromKey, weekOf } from '../logic/dates';
+import { WEEK, SHORT_NAMES, FULL_NAMES, addDays, dateKey, fromKey, weekOf } from '../logic/dates';
 import { tasksOn, isDone } from '../logic/tasks';
 
 const BAR_AREA = 130; // the tallest bar, in pixels
@@ -71,31 +73,107 @@ function Bar({ bar, blockHeight, gap, isToday, isSelected, onSelect }) {
   );
 }
 
-// The 7 days of this week (Monday -> Sunday). A click on a day shows its tasks under the chart.
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+// The Monday of the week of this date.
+function mondayOf(date) {
+  return weekOf(date)[0];
+}
+
+// How many weeks from the Monday "from" to the Monday "to". (Math.round: a summer time change shifts by 1 hour.)
+function weeksBetween(from, to) {
+  return Math.round((to - from) / WEEK_MS);
+}
+
+// "This week", "Last week", or "Oct 12 – Oct 18".
+function weekTitle(monday, thisMonday) {
+  const ago = weeksBetween(monday, thisMonday);
+  if (ago === 0) return 'This week';
+  if (ago === 1) return 'Last week';
+  if (ago === -1) return 'Next week';
+  const format = (date) => date.toLocaleDateString('en', { month: 'short', day: 'numeric' });
+  return format(monday) + ' – ' + format(addDays(monday, 6));
+}
+
+// The Mondays of the weeks to show, oldest first: from the first week with a checked task
+// (or the selected one, if it's older) to this week (or the selected one, if it's later).
+function weeksToShow(done, todayKey, selectedKey) {
+  const keys = [todayKey, selectedKey, ...Object.keys(done)].sort(); // the keys sort like the dates
+  const first = mondayOf(fromKey(keys[0]));
+  const last = mondayOf(fromKey(selectedKey > todayKey ? selectedKey : todayKey));
+  const mondays = [];
+  for (let monday = first; monday <= last; monday = addDays(monday, 7)) mondays.push(monday);
+  return mondays;
+}
+
+// One week per page (Monday -> Sunday), this week at the right: scroll to the left to see the previous ones.
+// A click on a day shows its tasks under the chart.
 export default function WeekChart({ tasks, done, todayKey, selectedKey, onSelect }) {
-  const bars = weekOf(fromKey(todayKey)).map((date) => makeBar(date, tasks, done));
-  const biggest = Math.max(1, ...bars.map((bar) => bar.total));
+  const scrollRef = useRef(null);
+  const mondays = weeksToShow(done, todayKey, selectedKey);
+  const thisMonday = mondayOf(fromKey(todayKey));
+  const selectedIndex = weeksBetween(mondays[0], mondayOf(fromKey(selectedKey)));
+
+  // The same task list every week -> the same tallest bar: the blocks keep their size from one week to another.
+  const biggest = Math.max(1, ...WEEK.map((weekDay) => tasksOn(tasks, weekDay).length));
   const gap = biggest > 12 ? 1 : 3; // lots of tasks: thinner gaps, so the blocks stay visible
   const blockHeight = Math.min(MAX_BLOCK, (BAR_AREA - gap * (biggest - 1)) / biggest);
 
+  // Show the week of the selected day: at once when the page opens, then with a slide
+  // (e.g. a day chosen in the calendar). The weeks are as wide as the chart.
+  const firstScroll = useRef(true);
+  useLayoutEffect(() => {
+    const scroll = scrollRef.current;
+    scroll.scrollTo({ left: selectedIndex * scroll.clientWidth, behavior: firstScroll.current ? 'instant' : 'smooth' });
+    firstScroll.current = false;
+  }, [selectedIndex, mondays.length]);
+
   return (
-    <div style={styles.chart}>
-      {bars.map((bar) => (
-        <Bar
-          key={bar.key}
-          bar={bar}
-          blockHeight={blockHeight}
-          gap={gap}
-          isToday={bar.key === todayKey}
-          isSelected={bar.key === selectedKey}
-          onSelect={onSelect}
-        />
+    <div ref={scrollRef} className="week-scroll" style={styles.scroll}>
+      {mondays.map((monday) => (
+        <div key={dateKey(monday)} style={styles.week}>
+          <AppText style={styles.weekTitle}>{weekTitle(monday, thisMonday)}</AppText>
+          <div style={styles.chart}>
+            {weekOf(monday).map((date) => {
+              const bar = makeBar(date, tasks, done);
+              return (
+                <Bar
+                  key={bar.key}
+                  bar={bar}
+                  blockHeight={blockHeight}
+                  gap={gap}
+                  isToday={bar.key === todayKey}
+                  isSelected={bar.key === selectedKey}
+                  onSelect={onSelect}
+                />
+              );
+            })}
+          </div>
+        </div>
       ))}
     </div>
   );
 }
 
 const styles = {
+  scroll: {
+    flexDirection: 'row',
+    overflowX: 'auto',
+    scrollSnapType: 'x mandatory', // the scroll always stops on a whole week
+  },
+  week: {
+    width: '100%',
+    paddingLeft: 10,
+    paddingRight: 10,
+    scrollSnapAlign: 'start',
+    scrollSnapStop: 'always', // one week at a time, even with a fast swipe
+  },
+  weekTitle: {
+    fontSize: 13,
+    opacity: 0.6,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
   chart: {
     flexDirection: 'row',
   },

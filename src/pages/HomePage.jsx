@@ -127,9 +127,7 @@ const styles = {
     padding: 10, // a bigger zone to tap than the icon
   },
   chart: {
-    paddingLeft: 10,
-    paddingRight: 10,
-    marginTop: 4,
+    marginTop: 4, // no padding on the sides: each week of the chart has its own (see WeekChart)
   },
   listHeader: {
     flexDirection: 'row',
