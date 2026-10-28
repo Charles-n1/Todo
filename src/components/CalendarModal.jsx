@@ -69,7 +69,7 @@ export default function CalendarModal({ tasks, done, todayKey, selectedKey, onSe
     if (!date) return <div key={'empty' + index} style={styles.cell} />;
 
     const key = dateKey(date);
-    const dayTasks = tasksOn(tasks, date.getDay());
+    const dayTasks = tasksOn(tasks, key);
     const doneCount = dayTasks.filter((task) => isDone(done, key, task.id)).length;
     const isToday = key === todayKey;
     const future = key > todayKey;

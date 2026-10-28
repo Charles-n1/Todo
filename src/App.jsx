@@ -41,7 +41,7 @@ export default function App() {
   const [saved] = useState(loadEverything);
   const [page, setPage] = useState('home'); // 'home' | 'settings' | 'task'
   const [slide, setSlide] = useState(''); // swipe direction: 'from-right' | 'from-left'
-  const [tasks, setTasks] = useState(saved.tasks); // [{ id, name, days }, ...]
+  const [tasks, setTasks] = useState(saved.tasks); // [{ id, name, days }, { id, name, date }, ...] (see logic/tasks.js)
   const [done, setDone] = useState(saved.done); // { "2026-10-15": ["sport", ...], ... }
   const [settings, setSettings] = useState(saved.settings);
   const [editedTask, setEditedTask] = useState(null); // the task open in the task page (null = a new one)
@@ -135,7 +135,9 @@ export default function App() {
     if (page === 'settings') return (
         <SettingsPage settings={settings} changeSetting={changeSetting} tasks={tasks} onEditTask={openTask} onBack={goHome} />
       );
-    if (page === 'task') return <TaskPage task={editedTask} onSave={saveTask} onDelete={deleteTask} onBack={goHome} />;
+    if (page === 'task') return (
+      <TaskPage task={editedTask} defaultDate={selectedKey} onSave={saveTask} onDelete={deleteTask} onBack={goHome} />
+    );
     return (
       <HomePage
         tasks={tasks}

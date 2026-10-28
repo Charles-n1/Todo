@@ -1,10 +1,14 @@
 import answerSuccessUrl from './assets/Sound/answer_success.mp3';
 import victoryUrl from './assets/Sound/victory.mp3';
 import backgroundMusicUrl from './assets/Music/background_music.mp3';
+import backgroundMusic2Url from './assets/Music/background_music2.mp3';
+import backgroundMusic3Url from './assets/Music/background_music3.mp3';
 import tobuRootsUrl from './assets/Music/tobu_roots.mp3';
 
 export const MUSICS = [
   { name: 'Background music', file: backgroundMusicUrl },
+  { name: 'Background music 2', file: backgroundMusic2Url },
+  { name: 'Background music 3', file: backgroundMusic3Url },
   { name: 'Tobu - Roots', file: tobuRootsUrl },
   { name: 'Off', file: null },
 ];

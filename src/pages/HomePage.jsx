@@ -29,7 +29,7 @@ export default function HomePage({ tasks, done, todayKey, selectedKey, onSelectD
   const theme = useTheme();
   const [calendarOpen, setCalendarOpen] = useState(false);
   const weekDay = fromKey(selectedKey).getDay();
-  const dayTasks = tasksOn(tasks, weekDay);
+  const dayTasks = tasksOn(tasks, selectedKey);
   const doneCount = dayTasks.filter((task) => isDone(done, selectedKey, task.id)).length;
   const allDone = dayTasks.length > 0 && doneCount === dayTasks.length;
   const future = selectedKey > todayKey; // the keys sort like the dates

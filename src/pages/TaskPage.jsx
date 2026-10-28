@@ -23,15 +23,18 @@ function sameDays(a, b) {
 }
 
 // Add a task (task = null), or edit / delete one.
+// defaultDate: the day a one-time task starts on ("2026-10-15": the day shown on the home page).
 // onSave(task): the new or changed task. onDelete(id). onBack: leave without saving.
-export default function TaskPage({ task, onSave, onDelete, onBack }) {
+export default function TaskPage({ task, defaultDate, onSave, onDelete, onBack }) {
   const theme = useTheme();
   const isNew = task === null;
   const [name, setName] = useState(isNew ? '' : task.name);
-  const [days, setDays] = useState(isNew ? WEEK : task.days);
+  const [once, setOnce] = useState(!isNew && Boolean(task.date)); // true = a one-time task (a date, no days)
+  const [days, setDays] = useState(isNew || task.date ? WEEK : task.days);
+  const [date, setDate] = useState(isNew || !task.date ? defaultDate : task.date);
   const [sureToDelete, setSureToDelete] = useState(false); // delete = 2 taps (no task lost by mistake)
   const cleanName = name.trim();
-  const canSave = cleanName.length > 0 && days.length > 0;
+  const canSave = cleanName.length > 0 && (once ? date !== '' : days.length > 0);
 
   function typeName(event) {
     setName(event.target.value);
@@ -51,8 +54,19 @@ export default function TaskPage({ task, onSave, onDelete, onBack }) {
     }
   }
 
+  // The date field gives "" when it's emptied: then "save" is disabled.
+  function pickDate(event) {
+    setDate(event.target.value);
+  }
+
+  function choosePreset(presetDays) {
+    setOnce(false);
+    setDays(presetDays);
+  }
+
   function save() {
-    onSave({ id: isNew ? newId() : task.id, name: cleanName, days: days });
+    const id = isNew ? newId() : task.id;
+    onSave(once ? { id: id, name: cleanName, date: date } : { id: id, name: cleanName, days: days });
   }
 
   function pressDelete() {
@@ -80,41 +94,70 @@ export default function TaskPage({ task, onSave, onDelete, onBack }) {
           style={{ ...styles.input, backgroundColor: theme.card, borderColor: theme.border, color: theme.text }}
         />
 
-        <AppText style={styles.section}>Repeat on</AppText>
-        <div style={styles.days}>
-          {WEEK.map((day) => {
-            const on = days.includes(day);
-            return (
-              <button
-                key={day}
-                onClick={() => toggleDay(day)}
-                aria-pressed={on}
-                style={{
-                  ...styles.day,
-                  borderColor: on ? theme.button : theme.border,
-                  backgroundColor: on ? theme.button : theme.card,
-                }}
-              >
-                <span style={{ ...styles.dayText, color: on ? theme.buttonText : theme.text }}>{SHORT_NAMES[day]}</span>
-              </button>
-            );
-          })}
-        </div>
+        <AppText style={styles.section}>{once ? 'On' : 'Repeat on'}</AppText>
+        {once && (
+          <input
+            type="date"
+            value={date}
+            onChange={pickDate}
+            aria-label="date"
+            style={{ ...styles.input, backgroundColor: theme.card, borderColor: theme.border, color: theme.text }}
+          />
+        )}
+        {!once && (
+          <div style={styles.days}>
+            {WEEK.map((day) => {
+              const on = days.includes(day);
+              return (
+                <button
+                  key={day}
+                  onClick={() => toggleDay(day)}
+                  aria-pressed={on}
+                  style={{
+                    ...styles.day,
+                    borderColor: on ? theme.button : theme.border,
+                    backgroundColor: on ? theme.button : theme.card,
+                  }}
+                >
+                  <span style={{ ...styles.dayText, color: on ? theme.buttonText : theme.text }}>
+                    {SHORT_NAMES[day]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
         <div style={styles.presets}>
           {PRESETS.map((preset) => {
-            const on = sameDays(days, preset.days);
+            const on = !once && sameDays(days, preset.days);
             return (
               <button
                 key={preset.label}
-                onClick={() => setDays(preset.days)}
-                style={{ ...styles.preset, borderColor: theme.border, backgroundColor: on ? theme.border : 'transparent' }}
+                onClick={() => choosePreset(preset.days)}
+                style={{
+                  ...styles.preset,
+                  borderColor: theme.border,
+                  backgroundColor: on ? theme.border : 'transparent',
+                }}
               >
                 <span style={{ ...styles.presetText, color: on ? theme.card : theme.text }}>{preset.label}</span>
               </button>
             );
           })}
+          {/* Only one day, no repeat */}
+          <button
+            onClick={() => setOnce(true)}
+            style={{
+              ...styles.preset,
+              borderColor: theme.border,
+              backgroundColor: once ? theme.border : 'transparent',
+            }}
+          >
+            <span style={{ ...styles.presetText, color: once ? theme.card : theme.text }}>Once</span>
+          </button>
         </div>
-        {days.length === 0 && <AppText style={styles.warning}>Choose at least one day.</AppText>}
+        {!once && days.length === 0 && <AppText style={styles.warning}>Choose at least one day.</AppText>}
+        {once && date === '' && <AppText style={styles.warning}>Choose a date.</AppText>}
 
         <MainButton label={isNew ? 'Add the task' : 'Save'} onPress={save} disabled={!canSave} style={styles.save} />
 
@@ -175,7 +218,8 @@ const styles = {
   },
   presets: {
     flexDirection: 'row',
-    gap: 8,
+    flexWrap: 'wrap', // a small phone: the last chips go to the next line
+    gap: 6,
     marginTop: 12,
   },
   preset: {
@@ -183,8 +227,8 @@ const styles = {
     borderRadius: 16,
     paddingTop: 6,
     paddingBottom: 6,
-    paddingLeft: 12,
-    paddingRight: 12,
+    paddingLeft: 11,
+    paddingRight: 11,
   },
   presetText: {
     fontSize: 14,

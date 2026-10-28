@@ -1,7 +1,12 @@
 import AppText from './AppText';
 import Modal from './Modal';
 import { useTheme } from '../themes';
-import { SHORT_NAMES, WEEK } from '../logic/dates';
+import { SHORT_NAMES, WEEK, fromKey } from '../logic/dates';
+
+// A one-time task: its date, "Fri, Oct 30".
+function dateLabel(dayKey) {
+  return fromKey(dayKey).toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' });
+}
 
 // The window with every task, and the days each one repeats. A tap on a task opens it, to change it (onEdit).
 export default function TasksModal({ tasks, onEdit, onClose }) {
@@ -22,26 +27,29 @@ export default function TasksModal({ tasks, onEdit, onClose }) {
             style={{ ...styles.task, borderColor: theme.border }}
           >
             <AppText style={styles.name}>{task.name}</AppText>
+            {task.date && <AppText style={styles.date}>{'Once · ' + dateLabel(task.date)}</AppText>}
             {/* The 7 days, Monday first: filled = the task repeats that day */}
-            <div style={styles.days}>
-              {WEEK.map((weekDay) => {
-                const on = task.days.includes(weekDay);
-                return (
-                  <span
-                    key={weekDay}
-                    style={{
-                      ...styles.day,
-                      borderColor: theme.border,
-                      backgroundColor: on ? theme.button : 'transparent',
-                      color: on ? theme.buttonText : theme.text,
-                      opacity: on ? 1 : 0.4,
-                    }}
-                  >
-                    {SHORT_NAMES[weekDay][0]}
-                  </span>
-                );
-              })}
-            </div>
+            {task.days && (
+              <div style={styles.days}>
+                {WEEK.map((weekDay) => {
+                  const on = task.days.includes(weekDay);
+                  return (
+                    <span
+                      key={weekDay}
+                      style={{
+                        ...styles.day,
+                        borderColor: theme.border,
+                        backgroundColor: on ? theme.button : 'transparent',
+                        color: on ? theme.buttonText : theme.text,
+                        opacity: on ? 1 : 0.4,
+                      }}
+                    >
+                      {SHORT_NAMES[weekDay][0]}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
           </button>
         ))}
       </div>
@@ -75,6 +83,10 @@ const styles = {
   name: {
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  date: {
+    fontSize: 14,
+    opacity: 0.7,
   },
   days: {
     flexDirection: 'row',

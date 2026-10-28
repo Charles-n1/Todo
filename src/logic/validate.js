@@ -30,6 +30,15 @@ function isDayList(days) {
   );
 }
 
+// "2026-10-15", and a real day (not "2026-02-31").
+function isDayKey(key) {
+  if (typeof key !== 'string' || !DAY_KEY.test(key)) return false;
+  const [year, month, day] = key.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  return date.getMonth() === month - 1 && date.getDate() === day;
+}
+
+// A task repeats on some days ("days"), or happens only once ("date").
 function isTask(task) {
   return (
     isObject(task) &&
@@ -38,7 +47,7 @@ function isTask(task) {
     typeof task.name === 'string' &&
     task.name.trim().length > 0 &&
     task.name.length <= MAX_NAME &&
-    isDayList(task.days)
+    (task.date === undefined ? isDayList(task.days) : isDayKey(task.date))
   );
 }
 
@@ -53,7 +62,11 @@ export function validTasks(tasks) {
   for (const task of tasks.slice(0, MAX_TASKS)) {
     if (isTask(task) && !seen.has(task.id)) {
       seen.add(task.id);
-      clean.push({ id: task.id, name: task.name, days: [...task.days] });
+      clean.push(
+        task.date
+          ? { id: task.id, name: task.name, date: task.date }
+          : { id: task.id, name: task.name, days: [...task.days] },
+      );
     }
   }
   return clean;

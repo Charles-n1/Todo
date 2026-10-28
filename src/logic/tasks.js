@@ -1,4 +1,7 @@
-// A task: { id: "lq2x8k-4fj2a", name: "sport", days: [1, 3, 5] } (the days it repeats, see dates.js).
+import { fromKey } from './dates';
+
+// A task: { id: "lq2x8k-4fj2a", name: "sport", days: [1, 3, 5] } (the days it repeats, see dates.js),
+// or a one-time task: { id: "lq2x9a-8dk3e", name: "dentist", date: "2026-10-30" } (only that day).
 // done: { "2026-10-15": ["sport", "anglais"], ... } = the ids of the tasks checked, day by day.
 
 // A new unique id: the time + a few random letters.
@@ -7,9 +10,10 @@ export function newId() {
   return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
 }
 
-// The tasks planned on that day of the week (0 = Sunday ... 6 = Saturday), in the list order.
-export function tasksOn(tasks, weekDay) {
-  return tasks.filter((task) => task.days.includes(weekDay));
+// The tasks planned on that day ("2026-10-15"), in the list order.
+export function tasksOn(tasks, dayKey) {
+  const weekDay = fromKey(dayKey).getDay(); // 0 = Sunday ... 6 = Saturday
+  return tasks.filter((task) => (task.date ? task.date === dayKey : task.days.includes(weekDay)));
 }
 
 export function isDone(done, dayKey, taskId) {

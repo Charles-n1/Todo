@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef } from 'react';
 
 import AppText from './AppText';
 import { useTheme, DONE_GREEN } from '../themes';
-import { WEEK, SHORT_NAMES, FULL_NAMES, addDays, dateKey, fromKey, weekOf } from '../logic/dates';
+import { SHORT_NAMES, FULL_NAMES, addDays, dateKey, fromKey, weekOf } from '../logic/dates';
 import { tasksOn, isDone } from '../logic/tasks';
 
 const BAR_AREA = 130; // the tallest bar, in pixels
@@ -11,7 +11,7 @@ const MAX_BLOCK = 24; // a block is never taller (with only 2 tasks, the bars do
 // For one day: how many tasks (= the height of the bar) and how many are done (= the green blocks).
 function makeBar(date, tasks, done) {
   const key = dateKey(date);
-  const dayTasks = tasksOn(tasks, date.getDay());
+  const dayTasks = tasksOn(tasks, key);
   return {
     key: key,
     label: SHORT_NAMES[date.getDay()],
@@ -114,8 +114,9 @@ export default function WeekChart({ tasks, done, todayKey, selectedKey, onSelect
   const thisMonday = mondayOf(fromKey(todayKey));
   const selectedIndex = weeksBetween(mondays[0], mondayOf(fromKey(selectedKey)));
 
-  // The same task list every week -> the same tallest bar: the blocks keep their size from one week to another.
-  const biggest = Math.max(1, ...WEEK.map((weekDay) => tasksOn(tasks, weekDay).length));
+  const weeks = mondays.map((monday) => weekOf(monday).map((date) => makeBar(date, tasks, done)));
+  // The tallest bar of ALL the weeks: the blocks keep their size from one week to another.
+  const biggest = Math.max(1, ...weeks.flat().map((bar) => bar.total));
   const gap = biggest > 12 ? 1 : 3; // lots of tasks: thinner gaps, so the blocks stay visible
   const blockHeight = Math.min(MAX_BLOCK, (BAR_AREA - gap * (biggest - 1)) / biggest);
 
@@ -130,24 +131,21 @@ export default function WeekChart({ tasks, done, todayKey, selectedKey, onSelect
 
   return (
     <div ref={scrollRef} className="week-scroll" style={styles.scroll}>
-      {mondays.map((monday) => (
+      {mondays.map((monday, index) => (
         <div key={dateKey(monday)} style={styles.week}>
           <AppText style={styles.weekTitle}>{weekTitle(monday, thisMonday)}</AppText>
           <div style={styles.chart}>
-            {weekOf(monday).map((date) => {
-              const bar = makeBar(date, tasks, done);
-              return (
-                <Bar
-                  key={bar.key}
-                  bar={bar}
-                  blockHeight={blockHeight}
-                  gap={gap}
-                  isToday={bar.key === todayKey}
-                  isSelected={bar.key === selectedKey}
-                  onSelect={onSelect}
-                />
-              );
-            })}
+            {weeks[index].map((bar) => (
+              <Bar
+                key={bar.key}
+                bar={bar}
+                blockHeight={blockHeight}
+                gap={gap}
+                isToday={bar.key === todayKey}
+                isSelected={bar.key === selectedKey}
+                onSelect={onSelect}
+              />
+            ))}
           </div>
         </div>
       ))}
