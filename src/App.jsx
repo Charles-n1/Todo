@@ -136,7 +136,14 @@ export default function App() {
         <SettingsPage settings={settings} changeSetting={changeSetting} tasks={tasks} onEditTask={openTask} onBack={goHome} />
       );
     if (page === 'task') return (
-      <TaskPage task={editedTask} defaultDate={selectedKey} onSave={saveTask} onDelete={deleteTask} onBack={goHome} />
+      <TaskPage
+        task={editedTask}
+        todayKey={todayKey}
+        defaultDate={selectedKey}
+        onSave={saveTask}
+        onDelete={deleteTask}
+        onBack={goHome}
+      />
     );
     return (
       <HomePage

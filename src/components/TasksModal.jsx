@@ -1,12 +1,7 @@
 import AppText from './AppText';
 import Modal from './Modal';
 import { useTheme } from '../themes';
-import { SHORT_NAMES, WEEK, fromKey } from '../logic/dates';
-
-// A one-time task: its date, "Fri, Oct 30".
-function dateLabel(dayKey) {
-  return fromKey(dayKey).toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' });
-}
+import { SHORT_NAMES, WEEK, shortDate } from '../logic/dates';
 
 // The window with every task, and the days each one repeats. A tap on a task opens it, to change it (onEdit).
 export default function TasksModal({ tasks, onEdit, onClose }) {
@@ -27,7 +22,8 @@ export default function TasksModal({ tasks, onEdit, onClose }) {
             style={{ ...styles.task, borderColor: theme.border }}
           >
             <AppText style={styles.name}>{task.name}</AppText>
-            {task.date && <AppText style={styles.date}>{'Once · ' + dateLabel(task.date)}</AppText>}
+            {task.date && <AppText style={styles.date}>{'Once · ' + shortDate(task.date)}</AppText>}
+            {task.removedFrom && <AppText style={styles.date}>{'Removed from ' + shortDate(task.removedFrom)}</AppText>}
             {/* The 7 days, Monday first: filled = the task repeats that day */}
             {task.days && (
               <div style={styles.days}>

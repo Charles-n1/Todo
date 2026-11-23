@@ -37,3 +37,8 @@ export function weekOf(date) {
   const monday = addDays(date, -sinceMonday);
   return [0, 1, 2, 3, 4, 5, 6].map((number) => addDays(monday, number));
 }
+
+// "2026-10-30" -> "Fri, Oct 30".
+export function shortDate(key) {
+  return fromKey(key).toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' });
+}

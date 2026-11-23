@@ -4,8 +4,8 @@ import BackButton from '../components/BackButton';
 import MainButton from '../components/MainButton';
 import ScrollView from '../components/ScrollView';
 import { useTheme } from '../themes';
-import { WEEK, WORK_DAYS, WEEKEND, SHORT_NAMES } from '../logic/dates';
-import { newId } from '../logic/tasks';
+import { WEEK, WORK_DAYS, WEEKEND, SHORT_NAMES, shortDate } from '../logic/dates';
+import { newId, withRemovedFrom } from '../logic/tasks';
 import { MAX_NAME } from '../logic/validate';
 
 const RED = '#d63031';
@@ -22,17 +22,19 @@ function sameDays(a, b) {
   return a.length === b.length && a.every((day) => b.includes(day));
 }
 
-// Add a task (task = null), or edit / delete one.
+// Add a task (task = null), or edit / remove / delete one.
 // defaultDate: the day a one-time task starts on ("2026-10-15": the day shown on the home page).
 // onSave(task): the new or changed task. onDelete(id). onBack: leave without saving.
-export default function TaskPage({ task, defaultDate, onSave, onDelete, onBack }) {
+export default function TaskPage({ task, todayKey, defaultDate, onSave, onDelete, onBack }) {
   const theme = useTheme();
   const isNew = task === null;
   const [name, setName] = useState(isNew ? '' : task.name);
   const [once, setOnce] = useState(!isNew && Boolean(task.date)); // true = a one-time task (a date, no days)
   const [days, setDays] = useState(isNew || task.date ? WEEK : task.days);
   const [date, setDate] = useState(isNew || !task.date ? defaultDate : task.date);
+  const [removeDate, setRemoveDate] = useState(todayKey); // "remove from": today, unless another day is picked
   const [sureToDelete, setSureToDelete] = useState(false); // delete = 2 taps (no task lost by mistake)
+  const canRemove = !isNew && !task.date; // only a repeating task (a one-time task is just deleted)
   const cleanName = name.trim();
   const canSave = cleanName.length > 0 && (once ? date !== '' : days.length > 0);
 
@@ -66,7 +68,25 @@ export default function TaskPage({ task, defaultDate, onSave, onDelete, onBack }
 
   function save() {
     const id = isNew ? newId() : task.id;
-    onSave(once ? { id: id, name: cleanName, date: date } : { id: id, name: cleanName, days: days });
+    if (once) {
+      onSave({ id: id, name: cleanName, date: date });
+    } else {
+      // Already removed from a day: it stays removed.
+      onSave(withRemovedFrom({ id: id, name: cleanName, days: days }, isNew ? null : task.removedFrom));
+    }
+  }
+
+  function pickRemoveDate(event) {
+    setRemoveDate(event.target.value);
+  }
+
+  // Gone from that day on. The days before keep it, with what was checked: the history stays true.
+  function removeFrom() {
+    onSave(withRemovedFrom(task, removeDate));
+  }
+
+  function bringBack() {
+    onSave(withRemovedFrom(task, null));
   }
 
   function pressDelete() {
@@ -161,10 +181,50 @@ export default function TaskPage({ task, defaultDate, onSave, onDelete, onBack }
 
         <MainButton label={isNew ? 'Add the task' : 'Save'} onPress={save} disabled={!canSave} style={styles.save} />
 
+        {canRemove && !task.removedFrom && (
+          <>
+            <AppText style={styles.section}>Remove from</AppText>
+            <input
+              type="date"
+              value={removeDate}
+              onChange={pickRemoveDate}
+              aria-label="remove from"
+              style={{ ...styles.input, backgroundColor: theme.card, borderColor: theme.border, color: theme.text }}
+            />
+            <AppText style={styles.hint}>
+              It disappears from this day on. The days before keep it, with what you checked.
+            </AppText>
+            <button
+              onClick={removeFrom}
+              disabled={removeDate === ''}
+              style={{ ...styles.remove, borderColor: theme.border, ...(removeDate === '' && styles.disabled) }}
+            >
+              <span style={{ ...styles.removeText, color: theme.text }}>
+                {removeDate === '' ? 'Choose a date' : 'Remove from ' + shortDate(removeDate)}
+              </span>
+            </button>
+          </>
+        )}
+        {canRemove && task.removedFrom && (
+          <>
+            <AppText style={styles.section}>Removed</AppText>
+            <AppText style={styles.hint}>
+              {'Gone since ' + shortDate(task.removedFrom) + '. The days before still have it.'}
+            </AppText>
+            <button onClick={bringBack} style={{ ...styles.remove, borderColor: theme.border }}>
+              <span style={{ ...styles.removeText, color: theme.text }}>Bring it back</span>
+            </button>
+          </>
+        )}
+
         {!isNew && (
           <button onClick={pressDelete} style={{ ...styles.delete, ...(sureToDelete && styles.deleteSure) }}>
             <span style={{ ...styles.deleteText, color: sureToDelete ? '#fff' : RED }}>
-              {sureToDelete ? 'Tap again to delete' : 'Delete this task'}
+              {sureToDelete
+                ? 'Tap again to delete'
+                : canRemove
+                  ? 'Delete everywhere (history too)'
+                  : 'Delete this task'}
             </span>
           </button>
         )}
@@ -239,6 +299,25 @@ const styles = {
   },
   save: {
     marginTop: 32,
+  },
+  hint: {
+    fontSize: 14,
+    opacity: 0.7,
+    marginTop: 8,
+  },
+  remove: {
+    alignItems: 'center',
+    borderWidth: 2,
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 12,
+  },
+  removeText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  disabled: {
+    opacity: 0.4,
   },
   delete: {
     alignItems: 'center',
