@@ -5,7 +5,7 @@ import MainButton from '../components/MainButton';
 import ScrollView from '../components/ScrollView';
 import { useTheme } from '../themes';
 import { WEEK, WORK_DAYS, WEEKEND, SHORT_NAMES, shortDate } from '../logic/dates';
-import { newId, withRemovedFrom } from '../logic/tasks';
+import { newId, withDate } from '../logic/tasks';
 import { MAX_NAME } from '../logic/validate';
 
 const RED = '#d63031';
@@ -32,11 +32,15 @@ export default function TaskPage({ task, todayKey, defaultDate, onSave, onDelete
   const [once, setOnce] = useState(!isNew && Boolean(task.date)); // true = a one-time task (a date, no days)
   const [days, setDays] = useState(isNew || task.date ? WEEK : task.days);
   const [date, setDate] = useState(isNew || !task.date ? defaultDate : task.date);
+  // "Starts on": a new task starts today (the weeks before stay as they were). "" = on every day, the past too.
+  const [startDate, setStartDate] = useState(isNew ? todayKey : task.addedFrom || '');
   const [removeDate, setRemoveDate] = useState(todayKey); // "remove from": today, unless another day is picked
   const [sureToDelete, setSureToDelete] = useState(false); // delete = 2 taps (no task lost by mistake)
   const canRemove = !isNew && !task.date; // only a repeating task (a one-time task is just deleted)
   const cleanName = name.trim();
-  const canSave = cleanName.length > 0 && (once ? date !== '' : days.length > 0);
+  // Removed from a day: it must start before (or it would never be there).
+  const startsTooLate = !once && !isNew && Boolean(task.removedFrom) && startDate >= task.removedFrom;
+  const canSave = cleanName.length > 0 && (once ? date !== '' : days.length > 0 && !startsTooLate);
 
   function typeName(event) {
     setName(event.target.value);
@@ -71,9 +75,15 @@ export default function TaskPage({ task, todayKey, defaultDate, onSave, onDelete
     if (once) {
       onSave({ id: id, name: cleanName, date: date });
     } else {
+      const repeating = withDate({ id: id, name: cleanName, days: days }, 'addedFrom', startDate);
       // Already removed from a day: it stays removed.
-      onSave(withRemovedFrom({ id: id, name: cleanName, days: days }, isNew ? null : task.removedFrom));
+      onSave(withDate(repeating, 'removedFrom', isNew ? null : task.removedFrom));
     }
+  }
+
+  // Emptied ("") = no start: on every day, the past too.
+  function pickStartDate(event) {
+    setStartDate(event.target.value);
   }
 
   function pickRemoveDate(event) {
@@ -82,11 +92,11 @@ export default function TaskPage({ task, todayKey, defaultDate, onSave, onDelete
 
   // Gone from that day on. The days before keep it, with what was checked: the history stays true.
   function removeFrom() {
-    onSave(withRemovedFrom(task, removeDate));
+    onSave(withDate(task, 'removedFrom', removeDate));
   }
 
   function bringBack() {
-    onSave(withRemovedFrom(task, null));
+    onSave(withDate(task, 'removedFrom', null));
   }
 
   function pressDelete() {
@@ -178,6 +188,29 @@ export default function TaskPage({ task, todayKey, defaultDate, onSave, onDelete
         </div>
         {!once && days.length === 0 && <AppText style={styles.warning}>Choose at least one day.</AppText>}
         {once && date === '' && <AppText style={styles.warning}>Choose a date.</AppText>}
+
+        {!once && (
+          <>
+            <AppText style={styles.section}>Starts on</AppText>
+            <input
+              type="date"
+              value={startDate}
+              onChange={pickStartDate}
+              aria-label="starts on"
+              style={{ ...styles.input, backgroundColor: theme.card, borderColor: theme.border, color: theme.text }}
+            />
+            <AppText style={styles.hint}>
+              {startDate === ''
+                ? 'No date: it is on the past days too.'
+                : 'It appears from this day on. The days before stay as they were.'}
+            </AppText>
+            {startsTooLate && (
+              <AppText style={styles.warning}>
+                {'It is removed from ' + shortDate(task.removedFrom) + ': choose an earlier day.'}
+              </AppText>
+            )}
+          </>
+        )}
 
         <MainButton label={isNew ? 'Add the task' : 'Save'} onPress={save} disabled={!canSave} style={styles.save} />
 

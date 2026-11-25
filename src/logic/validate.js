@@ -38,7 +38,12 @@ function isDayKey(key) {
   return date.getMonth() === month - 1 && date.getDate() === day;
 }
 
-// A task repeats on some days ("days", maybe "removedFrom" a day on), or happens only once ("date").
+// No date, or a good one.
+function isOptionalDayKey(key) {
+  return key === undefined || isDayKey(key);
+}
+
+// A task repeats on some days ("days", maybe "addedFrom" / "removedFrom" a day on), or happens only once ("date").
 function isTask(task) {
   return (
     isObject(task) &&
@@ -48,7 +53,7 @@ function isTask(task) {
     task.name.trim().length > 0 &&
     task.name.length <= MAX_NAME &&
     (task.date === undefined
-      ? isDayList(task.days) && (task.removedFrom === undefined || isDayKey(task.removedFrom))
+      ? isDayList(task.days) && isOptionalDayKey(task.addedFrom) && isOptionalDayKey(task.removedFrom)
       : isDayKey(task.date))
   );
 }
@@ -66,10 +71,11 @@ export function validTasks(tasks) {
       seen.add(task.id);
       if (task.date) {
         clean.push({ id: task.id, name: task.name, date: task.date });
-      } else if (task.removedFrom) {
-        clean.push({ id: task.id, name: task.name, days: [...task.days], removedFrom: task.removedFrom });
       } else {
-        clean.push({ id: task.id, name: task.name, days: [...task.days] });
+        const repeating = { id: task.id, name: task.name, days: [...task.days] };
+        if (task.addedFrom) repeating.addedFrom = task.addedFrom;
+        if (task.removedFrom) repeating.removedFrom = task.removedFrom;
+        clean.push(repeating);
       }
     }
   }

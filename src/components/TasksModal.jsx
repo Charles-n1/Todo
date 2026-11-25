@@ -23,6 +23,7 @@ export default function TasksModal({ tasks, onEdit, onClose }) {
           >
             <AppText style={styles.name}>{task.name}</AppText>
             {task.date && <AppText style={styles.date}>{'Once · ' + shortDate(task.date)}</AppText>}
+            {task.addedFrom && <AppText style={styles.date}>{'Starts on ' + shortDate(task.addedFrom)}</AppText>}
             {task.removedFrom && <AppText style={styles.date}>{'Removed from ' + shortDate(task.removedFrom)}</AppText>}
             {/* The 7 days, Monday first: filled = the task repeats that day */}
             {task.days && (
